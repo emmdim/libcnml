@@ -158,7 +158,7 @@ class CNMLNode(object):
     CNML can also provide the total amount of links of this node
     """
     def __init__(self, nid, title, lat, lon, nlinks, status,
-                 elevation, created, updated):
+                 elevation, created, updated, parent):
         self.id = nid
         self.title = title
         self.latitude = lat
@@ -173,6 +173,7 @@ class CNMLNode(object):
         self.status = status
         self.devices = dict()
         self.services = dict()
+        self.parentZone = parent
 
     def getDevices(self):
         return self.devices.values()
@@ -187,7 +188,7 @@ class CNMLNode(object):
         self.services[service.id] = service
 
     @staticmethod
-    def parseMinidom(n):
+    def parseMinidom(n, parent):
         nid = int(n.getAttribute("id"))
         lat = float(n.getAttribute("lat"))
         lon = float(n.getAttribute("lon"))
@@ -204,11 +205,11 @@ class CNMLNode(object):
         updated = n.getAttribute('updated')  # parse date chunga
 
         newnode = CNMLNode(nid, title, lat, lon, nlinks, status,
-                           elevation, created, updated)
+                           elevation, created, updated, parent)
         return newnode
 
     @staticmethod
-    def parseLxml(n):
+    def parseLxml(n, parent):
         nid = int(n.get('id'))
         lat = float(n.get('lat'))
         lon = float(n.get('lon'))
@@ -225,15 +226,15 @@ class CNMLNode(object):
         updated = n.get('updated')
 
         newnode = CNMLNode(nid, title, lat, lon, nlinks, status,
-                           elevation, created, updated)
+                           elevation, created, updated, parent)
         return newnode
 
     @staticmethod
-    def parse(n):
+    def parse(n, parent):
         if LXML:
-            return CNMLNode.parseLxml(n)
+            return CNMLNode.parseLxml(n, parent)
         else:
-            return CNMLNode.parseMinidom(n)
+            return CNMLNode.parseMinidom(n, parent)
 
     def __str__(self):
         return 'CNMLNode({0}): {1} ({2})'.format(self.id, self.title, self.status)
@@ -913,7 +914,7 @@ class CNMLParser(object):
         for n in tree.getElementsByTagName("node"):
             nid = int(n.getAttribute("id"))
             zid = int(n.parentNode.getAttribute('id'))
-            newnode = CNMLNode.parse(n)
+            newnode = CNMLNode.parse(n, self.zones[zid])
             self.nodes[nid] = newnode
             self.zones[zid].addNode(newnode)
 
