@@ -172,20 +172,14 @@ class CNMLNode(object):
             self.updated = None
         self.status = status
         self.devices = dict()
-        self.services = dict()
         self.parentZone = parent
 
     def getDevices(self):
         return self.devices.values()
 
-    def getServices(self):
-        return self.services.values()
-
     def addDevice(self, dev):
         self.devices[dev.id] = dev
 
-    def addService(self, service):
-        self.services[service.id] = service
 
     @staticmethod
     def parseMinidom(n, parent):
@@ -255,7 +249,7 @@ class CNMLService(object):
         self.type = stype
         self.status = status
         self.created = created
-        self.parentNode = parent
+        self.parentDevice = parent
 
     @staticmethod
     def parseLxml(s, parent):
@@ -301,6 +295,7 @@ class CNMLDevice(object):
         self.title = title
         self.type = dtype
         self.radios = dict()
+        self.services = dict()
         self.interfaces = dict()
         self.parentNode = parent
         # self.ssid = ssid
@@ -311,11 +306,17 @@ class CNMLDevice(object):
     def getInterfaces(self):
         return self.interfaces.values()
 
+    def getServices(self):
+        return self.services.values()
+    
     def addRadio(self, radio):
         self.radios[radio.id] = radio
 
     def addInterface(self, interface):
         self.interfaces[interface.id] = interface
+    
+    def addService(self, service):
+        self.services[service.id] = service
 
     @staticmethod
     def parseLxml(d, parent):
@@ -816,7 +817,7 @@ class CNMLParser(object):
         for n in tree.iterfind('.//node'):
             nid = int(n.get('id'))
             zid = int(n.getparent().get('id'))
-            newnode = CNMLNode.parse(n)
+            newnode = CNMLNode.parse(n, self.zones[zid])
             self.nodes[nid] = newnode
             self.zones[zid].addNode(newnode)
 
@@ -855,7 +856,7 @@ class CNMLParser(object):
                     sid = int(s.get('id'))
                     newservice = CNMLService.parse(s, newdevice)
                     self.services[sid] = newservice
-                    self.nodes[nid].addService(newservice)
+                    self.devices[did].addService(newservice)
 
                 # --radios--
                 for r in d.iterfind('radio'):
@@ -954,7 +955,7 @@ class CNMLParser(object):
                     sid = int(s.getAttribute('id'))
                     newservice = CNMLService.parse(s, newdevice)
                     self.services[sid] = newservice
-                    self.nodes[nid].addService(newservice)
+                    self.devices[did].addService(newservice)
 
                 # --radios--
                 for r in d.getElementsByTagName("radio"):
