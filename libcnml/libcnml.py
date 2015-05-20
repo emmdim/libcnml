@@ -448,7 +448,7 @@ class CNMLInterface(object):
         self.mac = mac
         self.type = itype
         self.links = dict()
-        self.parentRadio = parent
+        self.parent = parent
 
     def getLinks(self):
         return self.links.values()
